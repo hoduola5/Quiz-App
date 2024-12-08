@@ -1,121 +1,160 @@
-let startBtn = document.getElementById('start'); //Start button
-let timerCounterEl = document.getElementById('time'); //timer display
-let highScoreEl = document.querySelector(".scores"); //score div
-let questionContainer = document.getElementById("questions"); //Question div
-let question = document.getElementById("question-title"); //Questions
-let optionsContainer = document.getElementById("choices"); //Options div
+// DOM Elements
+const startBtn = document.getElementById('start'); // Start button
+const timerCounterEl = document.getElementById('time'); // Timer display
+const highScoreEl = document.querySelector(".scores"); // High score div
+const questionContainer = document.getElementById("questions"); // Question container
+const question = document.getElementById("question-title"); // Question title
+const optionsContainer = document.getElementById("choices"); // Options container
 
-let questionBank = [
+// Question Bank
+const questionBank = [
   {
-      question: 'What does CSS mean?',
-      options: ['Cascadded Style Sheet', 'Cascended Style Sheet', '21', '17', ],
-      correctAnswer: 0,
-      optionOne: 'Cascadded Style Sheet',
-      optionTwo: 'Cascended Style Sheet',
-      optionThree: '21',
-      optionFour: '17',
-      answer: 'optionOne',
+    question: 'What does CSS mean?',
+    options: ['Cascaded Style Sheet', 'Cascended Style Sheet', '21', '17'],
+    correctAnswer: 0
   },
   {
-      question:"What does HTML mean?",
-      options: ['Hypertext Markup Language', 'Hyperlink Markup Language', 'Shanghai', 'None of the above'],
-      correctAnswer: 2,
-      optionOne: "Hypertext Markup Language",
-      optionTwo: "Hyperlink Markup Language",
-      optionThree: "Shanghai",
-      optionFour: "None of the above",
-      answer: 1,
+    question: "What does HTML mean?",
+    options: ['Hypertext Markup Language', 'Hyperlink Markup Language', 'Shanghai', 'None of the above'],
+    correctAnswer: 0
   },
   {
-      question: "How do you create a function in JavaScript?",
-      options: ['Function MyFunction()', 'Function:myFunction()', 'Function = MyFunction()', 'Function'],
-      correctAnswer: 1,
-      optionOne: "Function MyFunction()",
-      optionTwo: "Function:myFunction()",
-      optionThree: "Function = MyFunction()",
-      optionFour: "Function",   
-      answer: 'optionTwo',
+    question: "How do you create a function in JavaScript?",
+    options: ['Function MyFunction()', 'Function:myFunction()', 'Function = MyFunction()', 'Function'],
+    correctAnswer: 0
   }
-]
+];
 
+// State Variables
 let timer;
 let timerCount;
 let score = 0;
-var scoreCounter = 0;
-var loseCounter = 0;
-var isWin = false;
+let currentQuestion = 0;
 
-let shuffleQuestions, currentQuestion;
-
-// The init function is called when the page loads 
+// Initialize quiz
 function init() {
   getHighScores();
+  resetUI();
 }
 
-//create function to start the quiz
+// Reset UI
+function resetUI() {
+  questionContainer.classList.add('hide');
+  optionsContainer.innerHTML = '';
+  timerCounterEl.textContent = '0';
+  highScoreEl.textContent = '';
+  startBtn.disabled = false;
+}
+
+// Start Quiz
 function startQuiz() {
-  timerCount = 10;
-  //random questions
-  shuffleQuestions = questionBank.sort(() => Math.random() - 0.5);
+  if (!questionBank || questionBank.length === 0) {
+    alert("No questions available! Please add questions to the quiz.");
+    return;
+  }
+  timerCount = 30;
+  score = 0;
   currentQuestion = 0;
+  resetUI();
+  startBtn.disabled = true; // Disable start button during the quiz
+  shuffleQuestions();
   startTimer();
   renderQuiz();
-  // nextQuiz();
 }
 
-//To display the quiz
-function renderQuiz(){
+// Shuffle questions
+function shuffleQuestions() {
+  questionBank.sort(() => Math.random() - 0.5);
+}
+
+// Render quiz question and options
+function renderQuiz() {
+  if (currentQuestion >= questionBank.length) {
+    endQuiz();
+    return;
+  }
+  const current = questionBank[currentQuestion];
   questionContainer.classList.remove('hide');
-  question.textContent = questionBank[0].question;
-  const list = document.createElement('ul');
-  for (let i = 0; i < questionBank[0].options.length; i++) {
+  question.textContent = current.question;
+  optionsContainer.innerHTML = ''; // Clear previous options
+
+  current.options.forEach((option, index) => {
     const btn = document.createElement('button');
-    btn.textContent = questionBank[0].options[i];
-    list.appendChild(btn);
-    btn.addEventListener('click', function (e) {
-      e.preventDefault();
+    btn.textContent = option;
+    btn.classList.add('option-btn');
+    btn.setAttribute('data-index', index);
+    btn.setAttribute('tabindex', '0'); // Accessibility for keyboard navigation
+    optionsContainer.appendChild(btn);
 
-      if (btn === answer){
-        prompt('Correct');
-      }
-      else { prompt('Incorrect'); }
-    });
-  }
-  optionsContainer.appendChild(list);
-  startBtn.disabled = true; // prevent the start button from responding while round is still on.
+    // Handle button click
+    btn.addEventListener('click', () => checkAnswer(index, btn));
+  });
 }
 
-// These functions are used by init
+// Check answer
+function checkAnswer(selectedIndex, button) {
+  const current = questionBank[currentQuestion];
+  const correctIndex = current.correctAnswer;
+
+  // Highlight correct/incorrect answers
+  button.style.backgroundColor = selectedIndex === correctIndex ? 'green' : 'red';
+  optionsContainer.querySelectorAll('button').forEach((btn, index) => {
+    if (index === correctIndex) btn.style.backgroundColor = 'green';
+    btn.disabled = true; // Disable all buttons after selection
+  });
+
+  // Update score
+  if (selectedIndex === correctIndex) score++;
+
+  // Delay before showing the next question
+  setTimeout(() => {
+    currentQuestion++;
+    renderQuiz();
+  }, 1000);
+}
+
+// End quiz
+function endQuiz() {
+  clearInterval(timer); // Stop timer
+  alert(`Quiz over! Your final score: ${score}/${questionBank.length}`);
+  saveHighScore();
+  resetUI();
+  startBtn.disabled = false; // Allow restarting the quiz
+}
+
+// Save high score
+function saveHighScore() {
+  const lastHighScores = localStorage.getItem("highScore");
+  const highScore = lastHighScores ? Math.max(score, lastHighScores) : score;
+  localStorage.setItem("highScore", highScore);
+  highScoreEl.textContent = `High Score: ${highScore}`;
+}
+
+// Get high scores from local storage
 function getHighScores() {
-  // Get stored value from client storage, if it exists
-  var lastHighScores = localStorage.getItem("highScore");  
-  // If stored value doesn't exist, set counter to 0
-  if (lastHighScores === null) {
-    scoreCounter = 0;
-  } else {
-    // If a value is retrieved from client storage set the scoreCounter to that value
-    scoreCounter = lastHighScores;
-  }
-  //Render win count to page
-  win.textContent = scoreCounter;
+  const lastHighScores = localStorage.getItem("highScore");
+  const highScore = lastHighScores || 0;
+  highScoreEl.textContent = `High Score: ${highScore}`;
 }
 
-// The setTimer function starts and stops the timer and triggers winGame() and loseGame()
+// Timer logic
 function startTimer() {
-  // Sets timer
-  timer = setInterval(function() {
+  timerCounterEl.textContent = timerCount;
+  timer = setInterval(() => {
     timerCount--;
     timerCounterEl.textContent = timerCount;
-    if(timerCount === 0){
+
+    if (timerCount <= 0) {
       clearInterval(timer);
-      return timerCount = 0;
+      endQuiz();
     }
   }, 1000);
 }
 
+// Event Listener for Start Button
 startBtn.addEventListener('click', startQuiz);
 
-
-// Calls init() so that it fires when page opened
+// Initialize the application
 init();
+
 
