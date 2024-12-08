@@ -1,6 +1,6 @@
 # Quiz-App
 
-Quiz-App is an application that generates password based on user requirements. It require user to enter the length of password they want to generate, and must choose one of the following possible requirements before password can be generated:
+Quiz Master App is an engaging web-based quiz platform built with HTML5, CSS3, and JavaScript. It features randomized questions, a countdown timer, real-time feedback, and a high-score tracker, providing both fun and learning. The app stores high scores using localStorage and is fully accessible with keyboard navigation. Its responsive design ensures a seamless experience across devices. Perfect for testing your knowledge and competing with friends!
 
 ## Usage
 
